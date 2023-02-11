@@ -1,49 +1,65 @@
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
+// const API_KEY = "AIzaSyCNwvM7_De7xjtbbAwh1g1XEcFPxVfaOKE";
+
+import React, { useState } from "react";
 
 const Index = () => {
+  // const API_KEY = "AIzaSyCNwvM7_De7xjtbbAwh1g1XEcFPxVfaOKE";
   const [input, setInput] = useState("");
-  const [video, setVideo] = useState({});
-  const [loading, setLoading] = useState(false);
+  const [captions, setCaptions] = useState("");
 
-  useEffect(() => {
-    if (!input) {
+  const getCaptions = async (url) => {
+    const searchParams = new URLSearchParams(new URL(url).search);
+    const videoId = searchParams.get("v");
+
+    const response = await fetch(
+      `https://www.googleapis.com/youtube/v3/captions?part=snippet&videoId=${videoId}&key=AIzaSyCNwvM7_De7xjtbbAwh1g1XEcFPxVfaOKE`
+    );
+    const json = await response.json();
+
+    if (!json.items.length) {
+      setCaptions("No captions found for this video.");
       return;
     }
 
-    setLoading(true);
-    fetch(
-      `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${input}&key=AIzaSyCNwvM7_De7xjtbbAwh1g1XEcFPxVfaOKE`
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.items && data.items[0] && data.items[0].snippet) {
-          setVideo(data.items[0].snippet);
-        }
-        setLoading(false);
-      });
-  }, [input]);
+    const captionId = json.items[0].id;
+    const captionResponse = await fetch(
+      `https://www.googleapis.com/youtube/v3/captions/${captionId}?key=AIzaSyCNwvM7_De7xjtbbAwh1g1XEcFPxVfaOKE`
+    );
+    const captionJson = await captionResponse.json();
+    const captionUrl =
+      captionJson["snippet"] && captionJson["snippet"]["trackKind"] === "ASR"
+        ? captionJson["snippet"]["v3AudioTrackId"]
+        : captionJson["snippet"] && captionJson["snippet"]["url"];
 
-  const handleSubmit = (e) => {
+    if (!captionUrl) {
+      setCaptions("No captions found for this video.");
+      return;
+    }
+
+    const captionTextResponse = await fetch(captionUrl);
+    const captionTextXml = await captionTextResponse.text();
+    const captionTextParser = new DOMParser();
+    const captionTextXmlDoc = captionTextParser.parseFromString(
+      captionTextXml,
+      "text/xml"
+    );
+    const textArray = captionTextXmlDoc.getElementsByTagName("text");
+    let captions = "";
+    for (let i = 0; i < textArray.length; i++) {
+      captions += textArray[i].childNodes[0].nodeValue + " ";
+    }
+    setCaptions(captions);
+  };
+
+  const handleGoClick = (e) => {
     e.preventDefault();
-    fetch(
-      `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${getVideoId(
-        input
-      )}&key=AIzaSyCNwvM7_De7xjtbbAwh1g1XEcFPxVfaOKE`
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.items && data.items.length) {
-          setVideo(data.items[0].snippet);
-        }
-        setLoading(false);
-      });
+    getCaptions(input);
   };
 
   return (
     <div className="flex flex-col items-center h-screen bg-white">
       <h1 className="text-black text-3xl font-bold p-8">YT-Recap</h1>
-      <form onSubmit={handleSubmit} className="m-auto">
+      <form className="m-auto">
         <input
           className="bg-gray-200 p-2 rounded-lg w-64 mt-5"
           type="text"
@@ -51,40 +67,18 @@ const Index = () => {
           value={input}
           onChange={(e) => setInput(e.target.value)}
         />
-        <Link href={`/summary?id=${input}`}>
-          <button className="bg-rose-500 text-white p-2 rounded-lg ml-2 hover:bg-rose-700 mt-5">
-            Go!
-          </button>
-        </Link>
+        <button
+          className="bg-rose-500 text-white p-2 rounded-lg ml-2 hover:bg-rose-700 mt-5"
+          onClick={handleGoClick}
+        >
+          Go!
+        </button>
       </form>
-      {loading && <div>Loading...</div>}
+      {captions && (
+        <div className="bg-gray-200 p-2 rounded-lg w-64 mt-5">{captions}</div>
+      )}
     </div>
   );
-};
-
-const Summary = ({ video }) => {
-  return (
-    <div className="flex flex-col items-center h-screen bg-white">
-      <h1 className="text-black text-3xl font-bold p-8">YT-Recap</h1>
-      <div className="m-auto">
-        <h2 className="text-black text-2xl font-bold p-8">{video.title}</h2>
-        <p className="text-black text-lg font-normal p-8">
-          {video.channelTitle}
-        </p>
-        <p className="text-black text-lg font-normal p-8">
-          {video.description}
-        </p>
-      </div>
-    </div>
-  );
-};
-
-Summary.getInitialProps = async ({ query }) => {
-  const res = await fetch(
-    `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${query.id}&key=AIzaSyCNwvM7_De7xjtbbAwh1g1XEcFPxVfaOKE`
-  );
-  const data = await res.json();
-  return { video: data.items[0].snippet };
 };
 
 export default Index;
