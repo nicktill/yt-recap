@@ -8,6 +8,10 @@ export default function Home() {
 
   const getClosedCaptions = () => {
     // Get video ID from YouTube URL
+    if (!videoUrl) {
+      setCaptions("Please enter a valid YouTube URL");
+      return; //break from loop
+    }
     const videoId = videoUrl.split("v=")[1];
     console.log("videoID", videoId);
 
@@ -20,8 +24,9 @@ export default function Home() {
         // Check if video has closed captions
         console.log("DATA => ", data);
         const items = data.items;
+        console.log("ITEMS => ", items);
         if (!items || items.length === 0) {
-          setCaptions("Error fetching video details.");
+          setCaptions("Error fetching first API for video details.");
           return;
         }
         const captionAvailable = items[0].contentDetails.caption === "true";
@@ -43,12 +48,12 @@ export default function Home() {
             setCaptions(text);
           })
           .catch((error) => {
-            console.error("Error fetching closed captions:", error);
-            setCaptions("Error fetching closed captions.");
+            console.error("Error fetching 2nd API closed captions:", error);
+            setCaptions("Error fetching 2nd API closed captions.");
           });
       })
       .catch((error) => {
-        console.error("Error fetching video details:", error);
+        console.error("Error fetching video END OF details:", error);
         setCaptions("Error fetching video details.");
       });
   };
@@ -56,19 +61,21 @@ export default function Home() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2">
       <div className="w-full md:w-1/3">
+        <h1 className="text-2xl align-middle font-bold mb-4">YT-Recap </h1>
         <input
           type="text"
           value={videoUrl}
           onChange={(event) => setVideoUrl(event.target.value)}
           className="w-full border border-gray-400 rounded px-3 py-2 mb-2"
           placeholder="Enter a YouTube video URL"
-        />
+        ></input>
         <button
           onClick={getClosedCaptions}
           className="bg-blue-500 text-white font-bold py-2 px-4 rounded"
         >
           Go!
         </button>
+
         {captions && (
           <div className="mt-4">
             <h2 className="text-lg font-bold mb-2">Closed captions:</h2>
