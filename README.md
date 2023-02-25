@@ -1,6 +1,7 @@
 # YT-Recap
 
-[Live Site Here](https://yt-recap.vercel.app/)
+[Live Site Here](https://yt-recap.vercel.app/) <br/>
+
 YT-Recap is an application that uses the YouTube Data API to retrieve the closed captions of a YouTube video, and then passes them to an AI model to generate a summary of the video content. The application is built using Next.js, Tailwind CSS, and Python.
 
 # Getting Started
