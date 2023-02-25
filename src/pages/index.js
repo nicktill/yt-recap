@@ -1,86 +1,81 @@
-// const API_KEY = "AIzaSyCNwvM7_De7xjtbbAwh1g1XEcFPxVfaOKE";
+import { useState } from "react";
 
-import React, { useState } from "react";
+const API_KEY = "AIzaSyCNwvM7_De7xjtbbAwh1g1XEcFPxVfaOKE";
 
-const Index = () => {
-  // const API_KEY = "AIzaSyCNwvM7_De7xjtbbAwh1g1XEcFPxVfaOKE";
-  const [input, setInput] = useState("");
+export default function Home() {
+  const [videoUrl, setVideoUrl] = useState("");
   const [captions, setCaptions] = useState("");
 
-  const getCaptions = async (url) => {
-    const searchParams = new URLSearchParams(new URL(url).search);
-    const videoId = searchParams.get("v");
-    console.log("Video ID", videoId); // e.g. "https://www.youtube.com/watch?v=9bZkp7q19f0" => "9bZkp7q19f0"
+  const getClosedCaptions = () => {
+    // Get video ID from YouTube URL
+    const videoId = videoUrl.split("v=")[1];
+    console.log("videoID", videoId);
 
-    const response = await fetch(
-      `https://www.googleapis.com/youtube/v3/captions?part=snippet&videoId=${videoId}&key=AIzaSyCNwvM7_De7xjtbbAwh1g1XEcFPxVfaOKE`
-    );
-    const json = await response.json();
-    console.log("JSON", json);
+    // Make request to YouTube Data API to get video details
+    fetch(
+      `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&part=snippet%2C+contentDetails&key=${API_KEY}`
+    )
+      .then((response) => response.json())
+      .then((data) => {
+        // Check if video has closed captions
+        console.log("DATA => ", data);
+        const items = data.items;
+        if (!items || items.length === 0) {
+          setCaptions("Error fetching video details.");
+          return;
+        }
+        const captionAvailable = items[0].contentDetails.caption === "true";
+        if (!captionAvailable) {
+          setCaptions("This video does not have closed captions.");
+          return;
+        }
 
-    if (!json.items.length) {
-      setCaptions("No captions found for this video.");
-      return;
-    }
+        // Get first closed caption track
+        const captionTrack = items[0].snippet.captionTracks[0];
+        console.log("Caption Track HEREE => ", captionTrack);
 
-    const captionId = json.items[0].id;
-    const captionResponse = await fetch(
-      `https://www.googleapis.com/youtube/v3/captions/${captionId}?key=AIzaSyCNwvM7_De7xjtbbAwh1g1XEcFPxVfaOKE`
-    );
-    const captionJson = await captionResponse.json();
-    const captionUrl =
-      captionJson["snippet"] && captionJson["snippet"]["trackKind"] === "ASR"
-        ? captionJson["snippet"]["v3AudioTrackId"]
-        : captionJson["snippet"] && captionJson["snippet"]["url"];
-
-    if (!captionUrl) {
-      setCaptions("No captions found for this video.");
-      return;
-    }
-
-    const captionTextResponse = await fetch(captionUrl);
-    const captionTextXml = await captionTextResponse.text();
-    const captionTextParser = new DOMParser();
-    const captionTextXmlDoc = captionTextParser.parseFromString(
-      captionTextXml,
-      "text/xml"
-    );
-    const textArray = captionTextXmlDoc.getElementsByTagName("text");
-    let captions = "";
-    for (let i = 0; i < textArray.length; i++) {
-      captions += textArray[i].childNodes[0].nodeValue + " ";
-    }
-    setCaptions(captions);
-  };
-
-  const handleGoClick = (e) => {
-    e.preventDefault();
-    getCaptions(input);
+        // Make request to YouTube Data API to get closed caption text
+        fetch(
+          `https://www.googleapis.com/youtube/v3/captions/${captionTrack.id}?key=${API_KEY}`
+        )
+          .then((response) => response.text())
+          .then((text) => {
+            setCaptions(text);
+          })
+          .catch((error) => {
+            console.error("Error fetching closed captions:", error);
+            setCaptions("Error fetching closed captions.");
+          });
+      })
+      .catch((error) => {
+        console.error("Error fetching video details:", error);
+        setCaptions("Error fetching video details.");
+      });
   };
 
   return (
-    <div className="flex flex-col items-center h-screen bg-white">
-      <h1 className="text-black text-3xl font-bold p-8">YT-Recap</h1>
-      <form className="m-auto">
+    <div className="flex flex-col items-center justify-center min-h-screen py-2">
+      <div className="w-full md:w-1/3">
         <input
-          className="bg-gray-200 p-2 rounded-lg w-64 mt-5"
           type="text"
-          placeholder="Enter YouTube URL"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
+          value={videoUrl}
+          onChange={(event) => setVideoUrl(event.target.value)}
+          className="w-full border border-gray-400 rounded px-3 py-2 mb-2"
+          placeholder="Enter a YouTube video URL"
         />
         <button
-          className="bg-rose-500 text-white p-2 rounded-lg ml-2 hover:bg-rose-700 mt-5"
-          onClick={handleGoClick}
+          onClick={getClosedCaptions}
+          className="bg-blue-500 text-white font-bold py-2 px-4 rounded"
         >
           Go!
         </button>
-      </form>
-      {captions && (
-        <div className="bg-gray-200 p-2 rounded-lg w-64 mt-5">{captions}</div>
-      )}
+        {captions && (
+          <div className="mt-4">
+            <h2 className="text-lg font-bold mb-2">Closed captions:</h2>
+            <p>{captions}</p>
+          </div>
+        )}
+      </div>
     </div>
   );
-};
-
-export default Index;
+}
