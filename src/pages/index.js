@@ -10,11 +10,13 @@ const Index = () => {
   const getCaptions = async (url) => {
     const searchParams = new URLSearchParams(new URL(url).search);
     const videoId = searchParams.get("v");
+    console.log("Video ID", videoId); // e.g. "https://www.youtube.com/watch?v=9bZkp7q19f0" => "9bZkp7q19f0"
 
     const response = await fetch(
       `https://www.googleapis.com/youtube/v3/captions?part=snippet&videoId=${videoId}&key=AIzaSyCNwvM7_De7xjtbbAwh1g1XEcFPxVfaOKE`
     );
     const json = await response.json();
+    console.log("JSON", json);
 
     if (!json.items.length) {
       setCaptions("No captions found for this video.");
