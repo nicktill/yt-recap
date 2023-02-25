@@ -7,55 +7,25 @@ export default function Home() {
   const [captions, setCaptions] = useState("");
 
   const getClosedCaptions = () => {
-    // Get video ID from YouTube URL
-    if (!videoUrl) {
-      setCaptions("Please enter a valid YouTube URL");
-      return; //break from loop
-    }
-    const videoId = videoUrl.split("v=")[1];
-    console.log("videoID", videoId);
-
-    // Make request to YouTube Data API to get video details
+    const videoID = videoUrl.split("v=")[1];
     fetch(
-      `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&part=snippet%2C+contentDetails&key=${API_KEY}`
+      `https://www.googleapis.com/youtube/v3/captions?part=id&videoId=${videoID}&key=${API_KEY}`
     )
+      //  parse the response as JSON and then grab the captionID
       .then((response) => response.json())
       .then((data) => {
-        // Check if video has closed captions
-        console.log("DATA => ", data);
-        const items = data.items;
-        console.log("ITEMS => ", items);
-        if (!items || items.length === 0) {
-          setCaptions("Error fetching first API for video details.");
-          return;
-        }
-        const captionAvailable = items[0].contentDetails.caption === "true";
-        if (!captionAvailable) {
-          setCaptions("This video does not have closed captions.");
-          return;
-        }
-
-        // Get first closed caption track
-        const captionTrack = items[0].snippet.captionTracks[0];
-        console.log("Caption Track HEREE => ", captionTrack);
-
-        // Make request to YouTube Data API to get closed caption text
+        const captionTrackId = data.items[0].id;
+        console.log("Caption track here", captionTrackId);
         fetch(
-          `https://www.googleapis.com/youtube/v3/captions/${captionTrack.id}?key=${API_KEY}`
+          `https://www.googleapis.com/youtube/v3/captions/${captionTrackId}?key=${API_KEY}&tfmt=srt`
         )
           .then((response) => response.text())
-          .then((text) => {
-            setCaptions(text);
+          .then((captionText) => {
+            setCaptions(captionText);
           })
-          .catch((error) => {
-            console.error("Error fetching 2nd API closed captions:", error);
-            setCaptions("Error fetching 2nd API closed captions.");
-          });
+          .catch((error) => console.error(error));
       })
-      .catch((error) => {
-        console.error("Error fetching video END OF details:", error);
-        setCaptions("Error fetching video details.");
-      });
+      .catch((error) => console.error(error));
   };
 
   return (
