@@ -3,7 +3,7 @@ import { useState } from "react";
 const API_KEY = "AIzaSyCNwvM7_De7xjtbbAwh1g1XEcFPxVfaOKE";
 const CLIENT_ID =
   "763688423244-c7lrtot64enn1c2fp6p0ifc456i963iq.apps.googleusercontent.com";
-const REDIRECT_URI = "https://localhost:3000/api/auth";
+const REDIRECT_URI = "http://localhost:3000/api/auth";
 const SCOPE = "https://www.googleapis.com/auth/youtube.readonly";
 const STATE = "123";
 
@@ -28,7 +28,8 @@ export default function Home() {
     fetch(`/api/auth?code=${code}`)
       .then((response) => response.json())
       .then((data) => {
-        const accessToken = data.accessToken;
+        const accessToken =
+          "ya29.a0AVvZVsqZv0LX0Qgidxn_BbejePYS2t4ICUAasZkuB2J1X9YdARa5hqoy5me7KESg-debgMev0kUh6QkMCmsZ0aJmQDokhZg4ps5AdrMDu2fzH9xEap_llujFDqcWfsJbUUEVO0wT9nk6O6EL5yEzDFW9IVeP5waCgYKAXcSARESFQGbdwaI6H6UCBRatYehRme85NwPuA0165";
         console.log(accessToken);
 
         fetch(
