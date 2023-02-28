@@ -6,9 +6,9 @@ export default function Home() {
 
   async function fetchCaptions(videoUrl) {
     const videoID = videoUrl.split("v=")[1];
-    const res = await fetch(`/api/captions?videoId=${videoID}`);
-    const { videoId, captions } = await res.json();
-    console.log("END OF fetchCaptions()", videoId, captions);
+    const res = await fetch(`/captions?videoId=${videoID}`);
+    const captionsData = await res.json();
+    return captionsData;
   }
 
   const getClosedCaptions = async () => {
