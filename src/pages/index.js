@@ -4,22 +4,17 @@ export default function Home() {
   const [videoUrl, setVideoUrl] = useState("");
   const [captions, setCaptions] = useState("");
 
-  const videoID = videoUrl.split("v=")[1]; // Get the video ID from the URL
-  console.log(videoID);
-
-  async function fetchCaptions() {
-    const res = await fetch("/api/captions");
-    const captionsData = await res.json();
-    return captionsData;
+  async function fetchCaptions(videoUrl) {
+    const videoID = videoUrl.split("v=")[1];
+    const res = await fetch(`/api/captions?videoId=${videoID}`);
+    const { videoId, captions } = await res.json();
+    console.log("END OF fetchCaptions()", videoId, captions);
   }
 
-  // in a Next.js component
-  async function getCaptionsData() {
-    const captionsData = await fetchCaptions();
-    // do something with captionsData, e.g. pass it as a prop to another component
-  }
-
-  // pass the videoURL to our Flask API Endpoint in Python
+  const getClosedCaptions = async () => {
+    const { videoId, captions } = await fetchCaptions(videoUrl);
+    setCaptions(captions);
+  };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2">
