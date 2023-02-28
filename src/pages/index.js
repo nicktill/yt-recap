@@ -1,63 +1,25 @@
 import { useState } from "react";
 
-const API_KEY = "AIzaSyCNwvM7_De7xjtbbAwh1g1XEcFPxVfaOKE";
-const CLIENT_ID =
-  "763688423244-c7lrtot64enn1c2fp6p0ifc456i963iq.apps.googleusercontent.com";
-const REDIRECT_URI = "http://localhost:3000/api/auth";
-const SCOPE = "https://www.googleapis.com/auth/youtube.readonly";
-const STATE = "123";
-
 export default function Home() {
   const [videoUrl, setVideoUrl] = useState("");
   const [captions, setCaptions] = useState("");
 
-  const getClosedCaptions = () => {
-    const videoID = videoUrl.split("v=")[1];
+  const videoID = videoUrl.split("v=")[1]; // Get the video ID from the URL
+  console.log(videoID);
 
-    // Generate the authentication URL for the user to click on
-    const AUTH_URL = `https://accounts.google.com/o/oauth2/auth?response_type=code&client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&scope=${SCOPE}&state=${STATE}`;
+  async function fetchCaptions() {
+    const res = await fetch("/api/captions");
+    const captionsData = await res.json();
+    return captionsData;
+  }
 
-    // Open the authentication URL in a new window
-    window.open(AUTH_URL, "_blank");
-    // grab the code from the URL
-    const code = window.location.href.split("code=")[1];
+  // in a Next.js component
+  async function getCaptionsData() {
+    const captionsData = await fetchCaptions();
+    // do something with captionsData, e.g. pass it as a prop to another component
+  }
 
-    // Prompt the user to enter the authorization code they received after authorizing the app
-
-    // Send the authorization code to the `/api/auth` endpoint to exchange for access and refresh tokens
-    fetch(`/api/auth?code=${code}`)
-      .then((response) => response.json())
-      .then((data) => {
-        const accessToken =
-          "ya29.a0AVvZVsqZv0LX0Qgidxn_BbejePYS2t4ICUAasZkuB2J1X9YdARa5hqoy5me7KESg-debgMev0kUh6QkMCmsZ0aJmQDokhZg4ps5AdrMDu2fzH9xEap_llujFDqcWfsJbUUEVO0wT9nk6O6EL5yEzDFW9IVeP5waCgYKAXcSARESFQGbdwaI6H6UCBRatYehRme85NwPuA0165";
-        console.log(accessToken);
-
-        fetch(
-          `https://www.googleapis.com/youtube/v3/captions?part=id&videoId=${videoID}&key=${API_KEY}`
-        )
-          .then((response) => response.json())
-          .then((data) => {
-            const captionTrackId = data.items[0].id;
-            console.log("Caption track here", captionTrackId);
-
-            fetch(
-              `https://www.googleapis.com/youtube/v3/captions/${captionTrackId}?key=${API_KEY}&tfmt=srt`,
-              {
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                },
-              }
-            )
-              .then((response) => response.text())
-              .then((captionText) => {
-                setCaptions(captionText);
-              })
-              .catch((error) => console.error(error));
-          })
-          .catch((error) => console.error(error));
-      })
-      .catch((error) => console.error(error));
-  };
+  // pass the videoURL to our Flask API Endpoint in Python
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2">
